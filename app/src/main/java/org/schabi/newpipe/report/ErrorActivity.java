@@ -30,9 +30,9 @@ import androidx.core.app.NavUtils;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.grack.nanojson.JsonWriter;
-
-import org.acra.ReportField;
-import org.acra.data.CrashReportData;
+//
+//import org.acra.ReportField;
+//import org.acra.data.CrashReportData;
 import org.schabi.newpipe.ActivityCommunicator;
 import org.schabi.newpipe.BuildConfig;
 import org.schabi.newpipe.MainActivity;
@@ -119,12 +119,12 @@ public class ErrorActivity extends AppCompatActivity {
     public static void reportError(final Context context, final Throwable e,
                                    final Class returnActivity, final View rootView,
                                    final ErrorInfo errorInfo) {
-        List<Throwable> el = null;
-        if (e != null) {
-            el = new Vector<>();
-            el.add(e);
-        }
-        reportError(context, el, returnActivity, rootView, errorInfo);
+//        List<Throwable> el = null;
+//        if (e != null) {
+//            el = new Vector<>();
+//            el.add(e);
+//        }
+//        reportError(context, el, returnActivity, rootView, errorInfo);
     }
 
     // async call
@@ -132,31 +132,31 @@ public class ErrorActivity extends AppCompatActivity {
                                    final Throwable e, final Class returnActivity,
                                    final View rootView, final ErrorInfo errorInfo) {
 
-        List<Throwable> el = null;
-        if (e != null) {
-            el = new Vector<>();
-            el.add(e);
-        }
-        reportError(handler, context, el, returnActivity, rootView, errorInfo);
+//        List<Throwable> el = null;
+//        if (e != null) {
+//            el = new Vector<>();
+//            el.add(e);
+//        }
+//        reportError(handler, context, el, returnActivity, rootView, errorInfo);
     }
 
     // async call
-    public static void reportError(final Handler handler, final Context context,
-                                   final List<Throwable> el, final Class returnActivity,
-                                   final View rootView, final ErrorInfo errorInfo) {
-        handler.post(() -> reportError(context, el, returnActivity, rootView, errorInfo));
-    }
+//    public static void reportError(final Handler handler, final Context context,
+//                                   final List<Throwable> el, final Class returnActivity,
+//                                   final View rootView, final ErrorInfo errorInfo) {
+//        handler.post(() -> reportError(context, el, returnActivity, rootView, errorInfo));
+//    }
 
-    public static void reportError(final Context context, final CrashReportData report,
-                                   final ErrorInfo errorInfo) {
-        String[] el = new String[]{report.getString(ReportField.STACK_TRACE)};
-
-        Intent intent = new Intent(context, ErrorActivity.class);
-        intent.putExtra(ERROR_INFO, errorInfo);
-        intent.putExtra(ERROR_LIST, el);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(intent);
-    }
+//    public static void reportError(final Context context, final CrashReportData report,
+//                                   final ErrorInfo errorInfo) {
+//        String[] el = new String[]{report.getString(ReportField.STACK_TRACE)};
+//
+//        Intent intent = new Intent(context, ErrorActivity.class);
+//        intent.putExtra(ERROR_INFO, errorInfo);
+//        intent.putExtra(ERROR_LIST, el);
+//        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//        context.startActivity(intent);
+//    }
 
     private static String getStackTrace(final Throwable throwable) {
         final StringWriter sw = new StringWriter();

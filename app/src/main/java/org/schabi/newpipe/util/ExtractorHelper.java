@@ -278,33 +278,34 @@ public final class ExtractorHelper {
     public static void handleGeneralException(final Context context, final int serviceId,
                                               final String url, final Throwable exception,
                                               final UserAction userAction,
-                                              final String optionalErrorMessage) {
-        final Handler handler = new Handler(context.getMainLooper());
-
-        handler.post(() -> {
-            if (exception instanceof ReCaptchaException) {
-                Toast.makeText(context, R.string.recaptcha_request_toast, Toast.LENGTH_LONG).show();
-                // Starting ReCaptcha Challenge Activity
-                Intent intent = new Intent(context, ReCaptchaActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(intent);
-            } else if (ExceptionUtils.isNetworkRelated(exception)) {
-                Toast.makeText(context, R.string.network_error, Toast.LENGTH_LONG).show();
-            } else if (exception instanceof ContentNotAvailableException) {
-                Toast.makeText(context, R.string.content_not_available, Toast.LENGTH_LONG).show();
-            } else if (exception instanceof ContentNotSupportedException) {
-                Toast.makeText(context, R.string.content_not_supported, Toast.LENGTH_LONG).show();
-            } else {
-                int errorId = exception instanceof YoutubeStreamExtractor.DecryptException
-                        ? R.string.youtube_signature_decryption_error
-                        : exception instanceof ParsingException
-                        ? R.string.parsing_error : R.string.general_error;
-                ErrorActivity.reportError(handler, context, exception, MainActivity.class, null,
-                        ErrorActivity.ErrorInfo.make(userAction, serviceId == -1 ? "none"
-                                : NewPipe.getNameOfService(serviceId),
-                                url + (optionalErrorMessage == null ? ""
-                                        : optionalErrorMessage), errorId));
-            }
-        });
+                                              final String optionalErrorMessage){
+//
+//        final Handler handler = new Handler(context.getMainLooper());
+//
+//        handler.post(() -> {
+//            if (exception instanceof ReCaptchaException) {
+//                Toast.makeText(context, R.string.recaptcha_request_toast, Toast.LENGTH_LONG).show();
+//                // Starting ReCaptcha Challenge Activity
+//                Intent intent = new Intent(context, ReCaptchaActivity.class);
+//                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//                context.startActivity(intent);
+//            } else if (ExceptionUtils.isNetworkRelated(exception)) {
+//                Toast.makeText(context, R.string.network_error, Toast.LENGTH_LONG).show();
+//            } else if (exception instanceof ContentNotAvailableException) {
+//                Toast.makeText(context, R.string.content_not_available, Toast.LENGTH_LONG).show();
+//            } else if (exception instanceof ContentNotSupportedException) {
+//                Toast.makeText(context, R.string.content_not_supported, Toast.LENGTH_LONG).show();
+//            } else {
+//                int errorId = exception instanceof YoutubeStreamExtractor.DecryptException
+//                        ? R.string.youtube_signature_decryption_error
+//                        : exception instanceof ParsingException
+//                        ? R.string.parsing_error : R.string.general_error;
+//                ErrorActivity.reportError(handler, context, exception, MainActivity.class, null,
+//                        ErrorActivity.ErrorInfo.make(userAction, serviceId == -1 ? "none"
+//                                : NewPipe.getNameOfService(serviceId),
+//                                url + (optionalErrorMessage == null ? ""
+//                                        : optionalErrorMessage), errorId));
+//            }
+//        });
     }
 }

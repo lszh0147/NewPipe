@@ -15,16 +15,16 @@ import com.nostra13.universalimageloader.cache.memory.impl.LRULimitedMemoryCache
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 
-import org.acra.ACRA;
-import org.acra.config.ACRAConfigurationException;
-import org.acra.config.CoreConfiguration;
-import org.acra.config.CoreConfigurationBuilder;
-import org.acra.sender.ReportSenderFactory;
+//import org.acra.ACRA;
+//import org.acra.config.ACRAConfigurationException;
+//import org.acra.config.CoreConfiguration;
+//import org.acra.config.CoreConfigurationBuilder;
+//import org.acra.sender.ReportSenderFactory;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.downloader.Downloader;
-import org.schabi.newpipe.report.AcraReportSenderFactory;
-import org.schabi.newpipe.report.ErrorActivity;
-import org.schabi.newpipe.report.UserAction;
+//import org.schabi.newpipe.report.AcraReportSenderFactory;
+//import org.schabi.newpipe.report.ErrorActivity;
+//import org.schabi.newpipe.report.UserAction;
 import org.schabi.newpipe.settings.SettingsActivity;
 import org.schabi.newpipe.util.ExceptionUtils;
 import org.schabi.newpipe.util.Localization;
@@ -66,8 +66,8 @@ import io.reactivex.plugins.RxJavaPlugins;
 public class App extends Application {
     protected static final String TAG = App.class.toString();
     @SuppressWarnings("unchecked")
-    private static final Class<? extends ReportSenderFactory>[]
-            REPORT_SENDER_FACTORY_CLASSES = new Class[]{AcraReportSenderFactory.class};
+//    private static final Class<? extends ReportSenderFactory>[]
+//            REPORT_SENDER_FACTORY_CLASSES = new Class[]{AcraReportSenderFactory.class};
     private static App app;
 
     public static App getApp() {
@@ -78,7 +78,7 @@ public class App extends Application {
     protected void attachBaseContext(final Context base) {
         super.attachBaseContext(base);
 
-        initACRA();
+//        initACRA();
     }
 
     @Override
@@ -200,23 +200,23 @@ public class App extends Application {
                 .build();
     }
 
-    private void initACRA() {
-        try {
-            final CoreConfiguration acraConfig = new CoreConfigurationBuilder(this)
-                    .setReportSenderFactoryClasses(REPORT_SENDER_FACTORY_CLASSES)
-                    .setBuildConfigClass(BuildConfig.class)
-                    .build();
-            ACRA.init(this, acraConfig);
-        } catch (ACRAConfigurationException ace) {
-            ace.printStackTrace();
-            ErrorActivity.reportError(this,
-                    ace,
-                    null,
-                    null,
-                    ErrorActivity.ErrorInfo.make(UserAction.SOMETHING_ELSE, "none",
-                            "Could not initialize ACRA crash report", R.string.app_ui_crash));
-        }
-    }
+//    private void initACRA() {
+//        try {
+//            final CoreConfiguration acraConfig = new CoreConfigurationBuilder(this)
+//                    .setReportSenderFactoryClasses(REPORT_SENDER_FACTORY_CLASSES)
+//                    .setBuildConfigClass(BuildConfig.class)
+//                    .build();
+//            ACRA.init(this, acraConfig);
+//        } catch (ACRAConfigurationException ace) {
+//            ace.printStackTrace();
+//            ErrorActivity.reportError(this,
+//                    ace,
+//                    null,
+//                    null,
+//                    ErrorActivity.ErrorInfo.make(UserAction.SOMETHING_ELSE, "none",
+//                            "Could not initialize ACRA crash report", R.string.app_ui_crash));
+//        }
+//    }
 
     public void initNotificationChannel() {
         if (Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {

@@ -170,8 +170,8 @@ public class RouterActivity extends AppCompatActivity {
         if (error instanceof ExtractionException) {
             Toast.makeText(this, R.string.url_not_supported_toast, Toast.LENGTH_LONG).show();
         } else {
-            ExtractorHelper.handleGeneralException(this, -1, null, error,
-                    UserAction.SOMETHING_ELSE, null);
+//            ExtractorHelper.handleGeneralException(this, -1, null, error,
+//                    UserAction.SOMETHING_ELSE, null);
         }
 
         finish();
