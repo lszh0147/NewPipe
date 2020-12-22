@@ -72,7 +72,7 @@
 
 
     <string name="autoplay_key" translatable="false">autoplay_key</string>
-    <string name="autoplay_value" translatable="false">@string/autoplay_wifi_key</string>
+    <string name="autoplay_value" translatable="false">@string/autoplay_always_key</string>
     <string name="autoplay_always_key" translatable="false">autoplay_always_key</string>
     <string name="autoplay_wifi_key" translatable="false">autoplay_wifi_key</string>
     <string name="autoplay_never_key" translatable="false">autoplay_never_key</string>
@@ -88,7 +88,7 @@
     </string-array>
 
     <string name="default_resolution_key" translatable="false">default_resolution</string>
-    <string name="default_resolution_value" translatable="false">720p60</string>
+    <string name="default_resolution_value" translatable="false">480p</string>
     <string name="show_higher_resolutions_key" translatable="false">show_higher_resolutions</string>
     <string name="default_popup_resolution_key" translatable="false">default_popup_resolution</string>
     <string name="default_popup_resolution_value" translatable="false">480p</string>
@@ -1162,7 +1162,7 @@
 
     <!-- Limit mobile data usage  -->
     <string name="limit_mobile_data_usage_key" translatable="false">limit_mobile_data_usage</string>
-    <string name="limit_data_usage_none_key" translatable="false">limit_data_usage_none</string>
+    <string name="limit_data_usage_none_key" translatable="false">480p</string>
 
     <string-array name="limit_data_usage_values_list">
         <item>@string/limit_data_usage_none_key</item>

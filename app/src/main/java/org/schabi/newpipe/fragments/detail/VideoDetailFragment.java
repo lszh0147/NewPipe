@@ -952,7 +952,7 @@ public final class VideoDetailFragment
                     isLoading.set(false);
                     hideMainPlayer();
                     if (result.getAgeLimit() != NO_AGE_LIMIT && !prefs.getBoolean(
-                            getString(R.string.show_age_restricted_content), false)) {
+                            getString(R.string.show_age_restricted_content), true)) {
                         hideAgeRestrictedContent();
                     } else {
                         handleResult(result);
@@ -1586,7 +1586,7 @@ public final class VideoDetailFragment
 
     private void hideAgeRestrictedContent() {
         showError(getString(R.string.restricted_video,
-                getString(R.string.show_age_restricted_content_title)), false);
+                getString(R.string.show_age_restricted_content_title)), true);
 
         if (relatedStreamsLayout != null) { // tablet
             relatedStreamsLayout.setVisibility(View.INVISIBLE);
