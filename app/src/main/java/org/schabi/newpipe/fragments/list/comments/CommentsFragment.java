@@ -20,17 +20,15 @@ import org.schabi.newpipe.report.UserAction;
 import org.schabi.newpipe.util.AnimationUtils;
 import org.schabi.newpipe.util.ExtractorHelper;
 
-import io.reactivex.Single;
-import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
 public class CommentsFragment extends BaseListInfoFragment<CommentsInfo> {
-    private CompositeDisposable disposables = new CompositeDisposable();
-
-    private boolean mIsVisibleToUser = false;
+    private final CompositeDisposable disposables = new CompositeDisposable();
 
     public static CommentsFragment getInstance(final int serviceId, final  String url,
                                                final String name) {
-        CommentsFragment instance = new CommentsFragment();
+        final CommentsFragment instance = new CommentsFragment();
         instance.setInitialData(serviceId, url, name);
         return instance;
     }
@@ -38,12 +36,6 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfo> {
     /*//////////////////////////////////////////////////////////////////////////
     // LifeCycle
     //////////////////////////////////////////////////////////////////////////*/
-
-    @Override
-    public void setUserVisibleHint(final boolean isVisibleToUser) {
-        super.setUserVisibleHint(isVisibleToUser);
-        mIsVisibleToUser = isVisibleToUser;
-    }
 
     @Override
     public void onAttach(final Context context) {
@@ -71,7 +63,7 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfo> {
 
     @Override
     protected Single<ListExtractor.InfoItemsPage> loadMoreItemsLogic() {
-        return ExtractorHelper.getMoreCommentItems(serviceId, currentInfo, currentNextPageUrl);
+        return ExtractorHelper.getMoreCommentItems(serviceId, currentInfo, currentNextPage);
     }
 
     @Override
@@ -92,7 +84,7 @@ public class CommentsFragment extends BaseListInfoFragment<CommentsInfo> {
     public void handleResult(@NonNull final CommentsInfo result) {
         super.handleResult(result);
 
-        AnimationUtils.slideUp(getView(), 120, 150, 0.06f);
+        AnimationUtils.slideUp(requireView(), 120, 150, 0.06f);
 
         if (!result.getErrors().isEmpty()) {
             showSnackBarError(result.getErrors(), UserAction.REQUESTED_COMMENTS,

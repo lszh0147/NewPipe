@@ -37,9 +37,9 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.functions.Function;
-import io.reactivex.schedulers.Schedulers;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.functions.Function;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 import static org.schabi.newpipe.MainActivity.DEBUG;
 
@@ -74,7 +74,7 @@ public class SubscriptionsExportService extends BaseImportExportService {
         try {
             outFile = new File(path);
             outputStream = new FileOutputStream(outFile);
-        } catch (FileNotFoundException e) {
+        } catch (final FileNotFoundException e) {
             handleError(e);
             return START_NOT_STICKY;
         }
@@ -109,7 +109,7 @@ public class SubscriptionsExportService extends BaseImportExportService {
                 .map(subscriptionEntities -> {
                     final List<SubscriptionItem> result
                             = new ArrayList<>(subscriptionEntities.size());
-                    for (SubscriptionEntity entity : subscriptionEntities) {
+                    for (final SubscriptionEntity entity : subscriptionEntities) {
                         result.add(new SubscriptionItem(entity.getServiceId(), entity.getUrl(),
                                 entity.getName()));
                     }

@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.schabi.newpipe.R;
@@ -19,9 +20,8 @@ import org.schabi.newpipe.util.FallbackViewHolder;
 
 import java.util.List;
 
-import io.reactivex.Observer;
-import io.reactivex.annotations.NonNull;
-import io.reactivex.disposables.Disposable;
+import io.reactivex.rxjava3.core.Observer;
+import io.reactivex.rxjava3.disposables.Disposable;
 
 /**
  * Created by Christian Schabesberger on 01.08.16.
@@ -215,7 +215,7 @@ public class PlayQueueAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         }
     }
 
-    public class HFHolder extends RecyclerView.ViewHolder {
+    public static class HFHolder extends RecyclerView.ViewHolder {
         public View view;
 
         public HFHolder(final View v) {

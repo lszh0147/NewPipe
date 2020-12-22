@@ -5,7 +5,7 @@
 <suppressions>
   <suppress checks="FinalParameters"
     files="LocalItemListAdapter.java"
-    lines="220,292"/>
+    lines="221,293"/>
 
   <suppress checks="FinalParameters"
     files="InfoListAdapter.java"
@@ -13,25 +13,20 @@
 
   <suppress checks="FinalParameters"
       files="ListHelper.java"
-      lines="278,310"/>
+      lines="281,313"/>
+
+  <suppress checks="EmptyBlock"
+      files="ContentSettingsFragment.java"
+      lines="227,245"/>
 
   <!-- org.schabi.newpipe.streams -->
-  <suppress checks="FinalParameters"
-      files="DataReader.java"
-      lines="46,93"/>
-
-  <suppress checks="FinalParameters"
-      files="Mp4FromDashWriter.java"
-      lines="643"/>
-
-  <suppress checks="FinalParameters"
-      files="OggFromWebMWriter.java"
-      lines="380,422"/>
-
-  <suppress checks="FinalParameters"
-      files="WebMWriter.java"
-      lines="419,591"/>
   <suppress checks="LineLength"
       files="WebMWriter.java"
       lines="156,158"/>
+
+  <suppress checks="FileLength"
+            files="VideoPlayerImpl.java"/>
+
+  <suppress checks="FileLength"
+            files="VideoDetailFragment.java"/>
 </suppressions>

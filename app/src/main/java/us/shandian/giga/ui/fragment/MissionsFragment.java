@@ -11,7 +11,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -66,7 +66,7 @@ public class MissionsFragment extends Fragment {
 
     private DownloadMission unsafeMissionTarget = null;
 
-    private ServiceConnection mConnection = new ServiceConnection() {
+    private final ServiceConnection mConnection = new ServiceConnection() {
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder binder) {
@@ -97,7 +97,7 @@ public class MissionsFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.missions, container, false);
 
-        mPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        mPrefs = PreferenceManager.getDefaultSharedPreferences(requireActivity());
         mLinear = mPrefs.getBoolean("linear", false);
 
         // Bind the service
@@ -224,9 +224,10 @@ public class MissionsFragment extends Fragment {
         mList.setAdapter(mAdapter);
 
         if (mSwitch != null) {
-            mSwitch.setIcon(mLinear
-                    ? ThemeHelper.resolveResourceIdFromAttr(requireContext(), R.attr.ic_grid)
-                    : ThemeHelper.resolveResourceIdFromAttr(requireContext(), R.attr.ic_list));
+            mSwitch.setIcon(ThemeHelper.resolveResourceIdFromAttr(
+                    requireContext(), mLinear
+                            ? R.attr.ic_grid
+                            : R.attr.ic_list));
             mSwitch.setTitle(mLinear ? R.string.grid : R.string.list);
             mPrefs.edit().putBoolean("linear", mLinear).apply();
         }

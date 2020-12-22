@@ -8,7 +8,7 @@ import androidx.preference.Preference;
 import org.schabi.newpipe.R;
 
 public class UpdateSettingsFragment extends BasePreferenceFragment {
-    private Preference.OnPreferenceChangeListener updatePreferenceChange
+    private final Preference.OnPreferenceChangeListener updatePreferenceChange
             = (preference, newValue) -> {
         defaultPreferences.edit()
                 .putBoolean(getString(R.string.update_app_key), (boolean) newValue).apply();
@@ -19,7 +19,7 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
     public void onCreate(@Nullable final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        String updateToggleKey = getString(R.string.update_app_key);
+        final String updateToggleKey = getString(R.string.update_app_key);
         findPreference(updateToggleKey).setOnPreferenceChangeListener(updatePreferenceChange);
     }
 

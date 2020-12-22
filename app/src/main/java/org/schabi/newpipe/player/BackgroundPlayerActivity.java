@@ -1,12 +1,9 @@
 package org.schabi.newpipe.player;
 
 import android.content.Intent;
-import android.view.MenuItem;
+import android.view.Menu;
 
 import org.schabi.newpipe.R;
-import org.schabi.newpipe.util.PermissionHelper;
-
-import static org.schabi.newpipe.player.BackgroundPlayer.ACTION_CLOSE;
 
 public final class BackgroundPlayerActivity extends ServicePlayerActivity {
 
@@ -19,25 +16,25 @@ public final class BackgroundPlayerActivity extends ServicePlayerActivity {
 
     @Override
     public String getSupportActionTitle() {
-        return getResources().getString(R.string.title_activity_background_player);
+        return getResources().getString(R.string.title_activity_play_queue);
     }
 
     @Override
     public Intent getBindIntent() {
-        return new Intent(this, BackgroundPlayer.class);
+        return new Intent(this, MainPlayer.class);
     }
 
     @Override
     public void startPlayerListener() {
-        if (player != null && player instanceof BackgroundPlayer.BasePlayerImpl) {
-            ((BackgroundPlayer.BasePlayerImpl) player).setActivityListener(this);
+        if (player instanceof VideoPlayerImpl) {
+            ((VideoPlayerImpl) player).setActivityListener(this);
         }
     }
 
     @Override
     public void stopPlayerListener() {
-        if (player != null && player instanceof BackgroundPlayer.BasePlayerImpl) {
-            ((BackgroundPlayer.BasePlayerImpl) player).removeActivityListener(this);
+        if (player instanceof VideoPlayerImpl) {
+            ((VideoPlayerImpl) player).removeActivityListener(this);
         }
     }
 
@@ -47,27 +44,14 @@ public final class BackgroundPlayerActivity extends ServicePlayerActivity {
     }
 
     @Override
-    public boolean onPlayerOptionSelected(final MenuItem item) {
-        if (item.getItemId() == R.id.action_switch_popup) {
-
-            if (!PermissionHelper.isPopupEnabled(this)) {
-                PermissionHelper.showPopupEnablementToast(this);
-                return true;
-            }
-
-            this.player.setRecovery();
-            getApplicationContext().sendBroadcast(getPlayerShutdownIntent());
-            getApplicationContext().startService(
-                    getSwitchIntent(PopupVideoPlayer.class)
-                            .putExtra(BasePlayer.START_PAUSED, !this.player.isPlaying())
-            );
-            return true;
+    public void setupMenu(final Menu menu) {
+        if (player == null) {
+            return;
         }
-        return false;
-    }
 
-    @Override
-    public Intent getPlayerShutdownIntent() {
-        return new Intent(ACTION_CLOSE);
+        menu.findItem(R.id.action_switch_popup)
+                .setVisible(!((VideoPlayerImpl) player).popupPlayerSelected());
+        menu.findItem(R.id.action_switch_background)
+                .setVisible(!((VideoPlayerImpl) player).audioPlayerSelected());
     }
 }

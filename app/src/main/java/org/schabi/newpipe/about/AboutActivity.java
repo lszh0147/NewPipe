@@ -6,21 +6,19 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentPagerAdapter;
-import androidx.fragment.app.FragmentStatePagerAdapter;
-import androidx.viewpager.widget.PagerAdapter;
-import androidx.viewpager.widget.ViewPager;
+import androidx.fragment.app.FragmentActivity;
+import androidx.viewpager2.adapter.FragmentStateAdapter;
 
-import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
 
 import org.schabi.newpipe.BuildConfig;
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.databinding.ActivityAboutBinding;
+import org.schabi.newpipe.databinding.FragmentAboutBinding;
 import org.schabi.newpipe.util.ThemeHelper;
 
 import static org.schabi.newpipe.util.Localization.assureCorrectAppLanguage;
@@ -30,9 +28,9 @@ public class AboutActivity extends AppCompatActivity {
     /**
      * List of all software components.
      */
-    private static final SoftwareComponent[] SOFTWARE_COMPONENTS = new SoftwareComponent[]{
+    private static final SoftwareComponent[] SOFTWARE_COMPONENTS = {
             new SoftwareComponent("Giga Get", "2014 - 2015", "Peter Cai",
-                    "https://github.com/PaperAirplane-Dev-Team/GigaGet", StandardLicenses.GPL2),
+                    "https://github.com/PaperAirplane-Dev-Team/GigaGet", StandardLicenses.GPL3),
             new SoftwareComponent("NewPipe Extractor", "2017 - 2020", "Christian Schabesberger",
                     "https://github.com/TeamNewPipe/NewPipeExtractor", StandardLicenses.GPL3),
             new SoftwareComponent("Jsoup", "2017", "Jonathan Hedley",
@@ -64,48 +62,45 @@ public class AboutActivity extends AppCompatActivity {
                     "https://github.com/lisawray/groupie", StandardLicenses.MIT)
     };
 
-    /**
-     * The {@link PagerAdapter} that will provide
-     * fragments for each of the sections. We use a
-     * {@link FragmentPagerAdapter} derivative, which will keep every
-     * loaded fragment in memory. If this becomes too memory intensive, it
-     * may be best to switch to a
-     * {@link FragmentStatePagerAdapter}.
-     */
-    private SectionsPagerAdapter mSectionsPagerAdapter;
-
-    /**
-     * The {@link ViewPager} that will host the section contents.
-     */
-    private ViewPager mViewPager;
+    private static final int POS_ABOUT = 0;
+    private static final int POS_LICENSE = 1;
+    private static final int TOTAL_COUNT = 2;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         assureCorrectAppLanguage(this);
         super.onCreate(savedInstanceState);
         ThemeHelper.setTheme(this);
-        this.setTitle(getString(R.string.title_activity_about));
+        setTitle(getString(R.string.title_activity_about));
 
-        setContentView(R.layout.activity_about);
+        final ActivityAboutBinding aboutBinding = ActivityAboutBinding.inflate(getLayoutInflater());
+        setContentView(aboutBinding.getRoot());
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        setSupportActionBar(aboutBinding.toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
-        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
+        final SectionsPagerAdapter mSectionsPagerAdapter = new SectionsPagerAdapter(this);
 
         // Set up the ViewPager with the sections adapter.
-        mViewPager = findViewById(R.id.container);
-        mViewPager.setAdapter(mSectionsPagerAdapter);
+        aboutBinding.container.setAdapter(mSectionsPagerAdapter);
 
-        TabLayout tabLayout = findViewById(R.id.tabs);
-        tabLayout.setupWithViewPager(mViewPager);
+        new TabLayoutMediator(aboutBinding.tabs, aboutBinding.container, (tab, position) -> {
+            switch (position) {
+                default:
+                case POS_ABOUT:
+                    tab.setText(R.string.tab_about);
+                    break;
+                case POS_LICENSE:
+                    tab.setText(R.string.tab_licenses);
+                    break;
+            }
+        }).attach();
     }
 
     @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
-        int id = item.getItemId();
+        final int id = item.getItemId();
 
         switch (id) {
             case android.R.id.home:
@@ -132,70 +127,55 @@ public class AboutActivity extends AppCompatActivity {
         }
 
         @Override
-        public View onCreateView(final LayoutInflater inflater, final ViewGroup container,
+        public View onCreateView(@NonNull final LayoutInflater inflater, final ViewGroup container,
                                  final Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_about, container, false);
-            Context context = this.getContext();
+            final FragmentAboutBinding aboutBinding =
+                    FragmentAboutBinding.inflate(inflater, container, false);
+            final Context context = getContext();
 
-            TextView version = rootView.findViewById(R.id.app_version);
-            version.setText(BuildConfig.VERSION_NAME);
+            aboutBinding.appVersion.setText(BuildConfig.VERSION_NAME);
 
-            View githubLink = rootView.findViewById(R.id.github_link);
-            githubLink.setOnClickListener(nv ->
+            aboutBinding.githubLink.setOnClickListener(nv ->
                     openUrlInBrowser(context, context.getString(R.string.github_url)));
 
-            View donationLink = rootView.findViewById(R.id.donation_link);
-            donationLink.setOnClickListener(v ->
+            aboutBinding.donationLink.setOnClickListener(v ->
                     openUrlInBrowser(context, context.getString(R.string.donation_url)));
 
-            View websiteLink = rootView.findViewById(R.id.website_link);
-            websiteLink.setOnClickListener(nv ->
+            aboutBinding.websiteLink.setOnClickListener(nv ->
                     openUrlInBrowser(context, context.getString(R.string.website_url)));
 
-            View privacyPolicyLink = rootView.findViewById(R.id.privacy_policy_link);
-            privacyPolicyLink.setOnClickListener(v ->
+            aboutBinding.privacyPolicyLink.setOnClickListener(v ->
                     openUrlInBrowser(context, context.getString(R.string.privacy_policy_url)));
 
-            return rootView;
+            return aboutBinding.getRoot();
         }
-
     }
 
     /**
-     * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
+     * A {@link FragmentStateAdapter} that returns a fragment corresponding to
      * one of the sections/tabs/pages.
      */
-    public class SectionsPagerAdapter extends FragmentPagerAdapter {
-        public SectionsPagerAdapter(final FragmentManager fm) {
-            super(fm);
+    public static class SectionsPagerAdapter extends FragmentStateAdapter {
+        public SectionsPagerAdapter(final FragmentActivity fa) {
+            super(fa);
         }
 
+        @NonNull
         @Override
-        public Fragment getItem(final int position) {
+        public Fragment createFragment(final int position) {
             switch (position) {
-                case 0:
+                default:
+                case POS_ABOUT:
                     return AboutFragment.newInstance();
-                case 1:
+                case POS_LICENSE:
                     return LicenseFragment.newInstance(SOFTWARE_COMPONENTS);
             }
-            return null;
         }
 
         @Override
-        public int getCount() {
+        public int getItemCount() {
             // Show 2 total pages.
-            return 2;
-        }
-
-        @Override
-        public CharSequence getPageTitle(final int position) {
-            switch (position) {
-                case 0:
-                    return getString(R.string.tab_about);
-                case 1:
-                    return getString(R.string.tab_licenses);
-            }
-            return null;
+            return TOTAL_COUNT;
         }
     }
 }

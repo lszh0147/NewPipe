@@ -11,6 +11,7 @@ import com.grack.nanojson.JsonObject;
 import com.grack.nanojson.JsonSink;
 
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.database.LocalItem.LocalItemType;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
@@ -18,11 +19,14 @@ import org.schabi.newpipe.fragments.BlankFragment;
 import org.schabi.newpipe.fragments.list.channel.ChannelFragment;
 import org.schabi.newpipe.fragments.list.kiosk.DefaultKioskFragment;
 import org.schabi.newpipe.fragments.list.kiosk.KioskFragment;
+import org.schabi.newpipe.fragments.list.playlist.PlaylistFragment;
 import org.schabi.newpipe.local.bookmark.BookmarkFragment;
 import org.schabi.newpipe.local.feed.FeedFragment;
 import org.schabi.newpipe.local.history.StatisticsPlaylistFragment;
+import org.schabi.newpipe.local.playlist.LocalPlaylistFragment;
 import org.schabi.newpipe.local.subscription.SubscriptionFragment;
 import org.schabi.newpipe.report.ErrorActivity;
+import org.schabi.newpipe.report.ErrorInfo;
 import org.schabi.newpipe.report.UserAction;
 import org.schabi.newpipe.util.KioskTranslator;
 import org.schabi.newpipe.util.ServiceHelper;
@@ -33,7 +37,8 @@ import java.util.Objects;
 public abstract class Tab {
     private static final String JSON_TAB_ID_KEY = "tab_id";
 
-    Tab() { }
+    Tab() {
+    }
 
     Tab(@NonNull final JsonObject jsonObject) {
         readDataFromJson(jsonObject);
@@ -61,7 +66,7 @@ public abstract class Tab {
 
     @Nullable
     public static Type typeFrom(final int tabId) {
-        for (Type available : Type.values()) {
+        for (final Type available : Type.values()) {
             if (available.getTabId() == tabId) {
                 return available;
             }
@@ -83,6 +88,8 @@ public abstract class Tab {
                     return new KioskTab(jsonObject);
                 case CHANNEL:
                     return new ChannelTab(jsonObject);
+                case PLAYLIST:
+                    return new PlaylistTab(jsonObject);
             }
         }
 
@@ -110,7 +117,7 @@ public abstract class Tab {
             return true;
         }
 
-        return obj instanceof Tab && obj.getClass().equals(this.getClass())
+        return obj instanceof Tab && obj.getClass() == this.getClass()
                 && ((Tab) obj).getTabId() == this.getTabId();
     }
 
@@ -147,9 +154,10 @@ public abstract class Tab {
         BOOKMARKS(new BookmarksTab()),
         HISTORY(new HistoryTab()),
         KIOSK(new KioskTab()),
-        CHANNEL(new ChannelTab());
+        CHANNEL(new ChannelTab()),
+        PLAYLIST(new PlaylistTab());
 
-        private Tab tab;
+        private final Tab tab;
 
         Type(final Tab tab) {
             this.tab = tab;
@@ -474,12 +482,131 @@ public abstract class Tab {
             try {
                 final StreamingService service = NewPipe.getService(kioskServiceId);
                 kioskId = service.getKioskList().getDefaultKioskId();
-            } catch (ExtractionException e) {
+            } catch (final ExtractionException e) {
                 ErrorActivity.reportError(context, e, null, null,
-                        ErrorActivity.ErrorInfo.make(UserAction.REQUESTED_KIOSK, "none",
+                        ErrorInfo.make(UserAction.REQUESTED_KIOSK, "none",
                                 "Loading default kiosk from selected service", 0));
             }
             return kioskId;
+        }
+    }
+
+    public static class PlaylistTab extends Tab {
+        public static final int ID = 8;
+        private static final String JSON_PLAYLIST_SERVICE_ID_KEY = "playlist_service_id";
+        private static final String JSON_PLAYLIST_URL_KEY = "playlist_url";
+        private static final String JSON_PLAYLIST_NAME_KEY = "playlist_name";
+        private static final String JSON_PLAYLIST_ID_KEY = "playlist_id";
+        private static final String JSON_PLAYLIST_TYPE_KEY = "playlist_type";
+        private int playlistServiceId;
+        private String playlistUrl;
+        private String playlistName;
+        private long playlistId;
+        private LocalItemType playlistType;
+
+        private PlaylistTab() {
+            this(-1, "<no-name>");
+        }
+
+        public PlaylistTab(final long playlistId, final String playlistName) {
+            this.playlistName = playlistName;
+            this.playlistId = playlistId;
+            this.playlistType = LocalItemType.PLAYLIST_LOCAL_ITEM;
+            this.playlistServiceId = -1;
+            this.playlistUrl = "<no-url>";
+        }
+
+        public PlaylistTab(final int playlistServiceId, final String playlistUrl,
+                           final String playlistName) {
+            this.playlistServiceId = playlistServiceId;
+            this.playlistUrl = playlistUrl;
+            this.playlistName = playlistName;
+            this.playlistType = LocalItemType.PLAYLIST_REMOTE_ITEM;
+            this.playlistId = -1;
+        }
+
+        public PlaylistTab(final JsonObject jsonObject) {
+            super(jsonObject);
+        }
+
+        @Override
+        public int getTabId() {
+            return ID;
+        }
+
+        @Override
+        public String getTabName(final Context context) {
+            return playlistName;
+        }
+
+        @DrawableRes
+        @Override
+        public int getTabIconRes(final Context context) {
+            return ThemeHelper.resolveResourceIdFromAttr(context, R.attr.ic_bookmark);
+        }
+
+        @Override
+        public Fragment getFragment(final Context context) {
+            if (playlistType == LocalItemType.PLAYLIST_LOCAL_ITEM) {
+                return LocalPlaylistFragment.getInstance(playlistId, playlistName);
+
+            } else { // playlistType == LocalItemType.PLAYLIST_REMOTE_ITEM
+                return PlaylistFragment.getInstance(playlistServiceId, playlistUrl, playlistName);
+            }
+        }
+
+        @Override
+        protected void writeDataToJson(final JsonSink writerSink) {
+            writerSink.value(JSON_PLAYLIST_SERVICE_ID_KEY, playlistServiceId)
+                    .value(JSON_PLAYLIST_URL_KEY, playlistUrl)
+                    .value(JSON_PLAYLIST_NAME_KEY, playlistName)
+                    .value(JSON_PLAYLIST_ID_KEY, playlistId)
+                    .value(JSON_PLAYLIST_TYPE_KEY, playlistType.toString());
+        }
+
+        @Override
+        protected void readDataFromJson(final JsonObject jsonObject) {
+            playlistServiceId = jsonObject.getInt(JSON_PLAYLIST_SERVICE_ID_KEY, -1);
+            playlistUrl = jsonObject.getString(JSON_PLAYLIST_URL_KEY, "<no-url>");
+            playlistName = jsonObject.getString(JSON_PLAYLIST_NAME_KEY, "<no-name>");
+            playlistId = jsonObject.getInt(JSON_PLAYLIST_ID_KEY, -1);
+            playlistType = LocalItemType.valueOf(
+                    jsonObject.getString(JSON_PLAYLIST_TYPE_KEY,
+                            LocalItemType.PLAYLIST_LOCAL_ITEM.toString())
+            );
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            if (!(super.equals(obj)
+                    && Objects.equals(playlistType, ((PlaylistTab) obj).playlistType)
+                    && Objects.equals(playlistName, ((PlaylistTab) obj).playlistName))) {
+                return false; // base objects are different
+            }
+
+            return (playlistId == ((PlaylistTab) obj).playlistId)                     // local
+                    || (playlistServiceId == ((PlaylistTab) obj).playlistServiceId    // remote
+                    && Objects.equals(playlistUrl, ((PlaylistTab) obj).playlistUrl));
+        }
+
+        public int getPlaylistServiceId() {
+            return playlistServiceId;
+        }
+
+        public String getPlaylistUrl() {
+            return playlistUrl;
+        }
+
+        public String getPlaylistName() {
+            return playlistName;
+        }
+
+        public long getPlaylistId() {
+            return playlistId;
+        }
+
+        public LocalItemType getPlaylistType() {
+            return playlistType;
         }
     }
 }

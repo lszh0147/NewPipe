@@ -80,22 +80,13 @@ public class Utility {
     @SuppressWarnings("unchecked")
     public static <T> T readFromFile(File file) {
         T object;
-        ObjectInputStream objectInputStream = null;
 
-        try {
-            objectInputStream = new ObjectInputStream(new FileInputStream(file));
+        try (ObjectInputStream objectInputStream =
+                     new ObjectInputStream(new FileInputStream(file))) {
             object = (T) objectInputStream.readObject();
         } catch (Exception e) {
             Log.e("Utility", "Failed to deserialize the object", e);
             object = null;
-        }
-
-        if (objectInputStream != null) {
-            try {
-                objectInputStream.close();
-            } catch (Exception e) {
-                //nothing to do
-            }
         }
 
         return object;
@@ -201,7 +192,7 @@ public class Utility {
     }
 
     public static void copyToClipboard(Context context, String str) {
-        ClipboardManager cm = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipboardManager cm = ContextCompat.getSystemService(context, ClipboardManager.class);
 
         if (cm == null) {
             Toast.makeText(context, R.string.permission_denied, Toast.LENGTH_LONG).show();

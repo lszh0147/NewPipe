@@ -7,13 +7,13 @@ import android.view.MenuItem;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
 import org.schabi.newpipe.R;
-import org.schabi.newpipe.util.AndroidTvUtils;
+import org.schabi.newpipe.databinding.SettingsLayoutBinding;
+import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.views.FocusOverlayView;
 
@@ -51,10 +51,12 @@ public class SettingsActivity extends AppCompatActivity
         setTheme(ThemeHelper.getSettingsThemeStyle(this));
         assureCorrectAppLanguage(this);
         super.onCreate(savedInstanceBundle);
-        setContentView(R.layout.settings_layout);
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        final SettingsLayoutBinding settingsLayoutBinding =
+                SettingsLayoutBinding.inflate(getLayoutInflater());
+        setContentView(settingsLayoutBinding.getRoot());
+
+        setSupportActionBar(settingsLayoutBinding.toolbarLayout.toolbar);
 
         if (savedInstanceBundle == null) {
             getSupportFragmentManager().beginTransaction()
@@ -62,14 +64,14 @@ public class SettingsActivity extends AppCompatActivity
                     .commit();
         }
 
-        if (AndroidTvUtils.isTv(this)) {
+        if (DeviceUtils.isTv(this)) {
             FocusOverlayView.setupFocusObserver(this);
         }
     }
 
     @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
-        ActionBar actionBar = getSupportActionBar();
+        final ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
             actionBar.setDisplayShowTitleEnabled(true);
@@ -80,7 +82,7 @@ public class SettingsActivity extends AppCompatActivity
 
     @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
-        int id = item.getItemId();
+        final int id = item.getItemId();
         if (id == android.R.id.home) {
             if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
                 finish();
@@ -95,7 +97,7 @@ public class SettingsActivity extends AppCompatActivity
     @Override
     public boolean onPreferenceStartFragment(final PreferenceFragmentCompat caller,
                                              final Preference preference) {
-        Fragment fragment = Fragment
+        final Fragment fragment = Fragment
                 .instantiate(this, preference.getFragment(), preference.getExtras());
         getSupportFragmentManager().beginTransaction()
                 .setCustomAnimations(R.animator.custom_fade_in, R.animator.custom_fade_out,

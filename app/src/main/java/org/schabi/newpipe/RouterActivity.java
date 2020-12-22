@@ -8,14 +8,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
@@ -27,8 +25,13 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.ServiceCompat;
+import androidx.core.widget.TextViewCompat;
 import androidx.fragment.app.FragmentManager;
+import androidx.preference.PreferenceManager;
 
+import org.schabi.newpipe.databinding.ListRadioIconItemBinding;
+import org.schabi.newpipe.databinding.SingleChoiceDialogViewBinding;
 import org.schabi.newpipe.download.DownloadDialog;
 import org.schabi.newpipe.extractor.Info;
 import org.schabi.newpipe.extractor.NewPipe;
@@ -39,17 +42,21 @@ import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.playlist.PlaylistInfo;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.VideoStream;
+import org.schabi.newpipe.player.MainPlayer;
+import org.schabi.newpipe.player.helper.PlayerHelper;
+import org.schabi.newpipe.player.helper.PlayerHolder;
 import org.schabi.newpipe.player.playqueue.ChannelPlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.PlaylistPlayQueue;
 import org.schabi.newpipe.player.playqueue.SinglePlayQueue;
 import org.schabi.newpipe.report.UserAction;
-import org.schabi.newpipe.util.AndroidTvUtils;
 import org.schabi.newpipe.util.Constants;
+import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.ListHelper;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.PermissionHelper;
+import org.schabi.newpipe.util.ShareUtils;
 import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.util.urlfinder.UrlFinder;
 import org.schabi.newpipe.views.FocusOverlayView;
@@ -57,19 +64,17 @@ import org.schabi.newpipe.views.FocusOverlayView;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 
 import icepick.Icepick;
 import icepick.State;
-import io.reactivex.Observable;
-import io.reactivex.Single;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
-import io.reactivex.schedulers.Schedulers;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.functions.Consumer;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 import static org.schabi.newpipe.extractor.StreamingService.ServiceInfo.MediaCapability.AUDIO;
 import static org.schabi.newpipe.extractor.StreamingService.ServiceInfo.MediaCapability.VIDEO;
@@ -112,8 +117,6 @@ public class RouterActivity extends AppCompatActivity {
                 finish();
             }
         }
-
-        internalRoute = getIntent().getBooleanExtra(INTERNAL_ROUTE_KEY, false);
 
         setTheme(ThemeHelper.isLightThemeSelected(this)
                 ? R.style.RouterActivityThemeLight : R.style.RouterActivityThemeDark);
@@ -159,27 +162,36 @@ public class RouterActivity extends AppCompatActivity {
                     if (result) {
                         onSuccess();
                     } else {
-                        onError();
+                        showUnsupportedUrlDialog(url);
                     }
-                }, this::handleError));
+                }, throwable -> handleError(throwable, url)));
     }
 
-    private void handleError(final Throwable error) {
-        error.printStackTrace();
+    private void handleError(final Throwable throwable, final String url) {
+        throwable.printStackTrace();
 
-        if (error instanceof ExtractionException) {
-            Toast.makeText(this, R.string.url_not_supported_toast, Toast.LENGTH_LONG).show();
+        if (throwable instanceof ExtractionException) {
+            showUnsupportedUrlDialog(url);
         } else {
-//            ExtractorHelper.handleGeneralException(this, -1, null, error,
+//            ExtractorHelper.handleGeneralException(this, -1, url, throwable,
 //                    UserAction.SOMETHING_ELSE, null);
+            finish();
         }
-
-        finish();
     }
 
-    private void onError() {
-        Toast.makeText(this, R.string.url_not_supported_toast, Toast.LENGTH_LONG).show();
-        finish();
+    private void showUnsupportedUrlDialog(final String url) {
+        final Context context = getThemeWrapperContext();
+        new AlertDialog.Builder(context)
+                .setTitle(R.string.unsupported_url)
+                .setMessage(R.string.unsupported_url_dialog_message)
+                .setIcon(ThemeHelper.resolveResourceIdFromAttr(context, R.attr.ic_share))
+                .setPositiveButton(R.string.open_in_browser,
+                        (dialog, which) -> ShareUtils.openUrlInBrowser(this, url))
+                .setNegativeButton(R.string.share,
+                        (dialog, which) -> ShareUtils.shareUrl(this, "", url)) // no subject
+                .setNeutralButton(R.string.cancel, null)
+                .setOnDismissListener(dialog -> finish())
+                .show();
     }
 
     protected void onSuccess() {
@@ -257,9 +269,8 @@ public class RouterActivity extends AppCompatActivity {
         final Context themeWrapperContext = getThemeWrapperContext();
 
         final LayoutInflater inflater = LayoutInflater.from(themeWrapperContext);
-        final LinearLayout rootLayout = (LinearLayout) inflater.inflate(
-                R.layout.preferred_player_dialog_view, null, false);
-        final RadioGroup radioGroup = rootLayout.findViewById(android.R.id.list);
+        final RadioGroup radioGroup = SingleChoiceDialogViewBinding.inflate(getLayoutInflater())
+                .list;
 
         final DialogInterface.OnClickListener dialogButtonsClickListener = (dialog, which) -> {
             final int indexOfChild = radioGroup.indexOfChild(
@@ -268,6 +279,7 @@ public class RouterActivity extends AppCompatActivity {
 
             handleChoice(choice.key);
 
+            // open future streams always like this one, because "always" button was used by user
             if (which == DialogInterface.BUTTON_POSITIVE) {
                 preferences.edit()
                         .putString(getString(R.string.preferred_open_action_key), choice.key)
@@ -310,11 +322,10 @@ public class RouterActivity extends AppCompatActivity {
         };
 
         int id = 12345;
-        for (AdapterChoiceItem item : choices) {
-            final RadioButton radioButton
-                    = (RadioButton) inflater.inflate(R.layout.list_radio_icon_item, null);
+        for (final AdapterChoiceItem item : choices) {
+            final RadioButton radioButton = ListRadioIconItemBinding.inflate(inflater).getRoot();
             radioButton.setText(item.description);
-            radioButton.setCompoundDrawablesWithIntrinsicBounds(
+            TextViewCompat.setCompoundDrawablesRelativeWithIntrinsicBounds(radioButton,
                     AppCompatResources.getDrawable(getApplicationContext(), item.icon),
                     null, null, null);
             radioButton.setChecked(false);
@@ -330,7 +341,7 @@ public class RouterActivity extends AppCompatActivity {
                     getString(R.string.preferred_open_action_last_selected_key), null);
             if (!TextUtils.isEmpty(lastSelectedPlayer)) {
                 for (int i = 0; i < choices.size(); i++) {
-                    AdapterChoiceItem c = choices.get(i);
+                    final AdapterChoiceItem c = choices.get(i);
                     if (lastSelectedPlayer.equals(c.key)) {
                         selectedRadioPosition = i;
                         break;
@@ -347,7 +358,7 @@ public class RouterActivity extends AppCompatActivity {
 
         alertDialog.show();
 
-        if (AndroidTvUtils.isTv(this)) {
+        if (DeviceUtils.isTv(this)) {
             FocusOverlayView.setupFocusObserver(alertDialog);
         }
     }
@@ -362,28 +373,63 @@ public class RouterActivity extends AppCompatActivity {
 
         final SharedPreferences preferences = PreferenceManager
                 .getDefaultSharedPreferences(this);
-        boolean isExtVideoEnabled = preferences.getBoolean(
+        final boolean isExtVideoEnabled = preferences.getBoolean(
                 getString(R.string.use_external_video_player_key), false);
-        boolean isExtAudioEnabled = preferences.getBoolean(
+        final boolean isExtAudioEnabled = preferences.getBoolean(
                 getString(R.string.use_external_audio_player_key), false);
 
-        returnList.add(new AdapterChoiceItem(getString(R.string.show_info_key),
-                getString(R.string.show_info),
-                resolveResourceIdFromAttr(context, R.attr.ic_info_outline)));
+        final AdapterChoiceItem videoPlayer = new AdapterChoiceItem(
+                getString(R.string.video_player_key), getString(R.string.video_player),
+                resolveResourceIdFromAttr(context, R.attr.ic_play_arrow));
+        final AdapterChoiceItem showInfo = new AdapterChoiceItem(
+                getString(R.string.show_info_key), getString(R.string.show_info),
+                resolveResourceIdFromAttr(context, R.attr.ic_info_outline));
+        final AdapterChoiceItem popupPlayer = new AdapterChoiceItem(
+                getString(R.string.popup_player_key), getString(R.string.popup_player),
+                resolveResourceIdFromAttr(context, R.attr.ic_popup));
+        final AdapterChoiceItem backgroundPlayer = new AdapterChoiceItem(
+                getString(R.string.background_player_key), getString(R.string.background_player),
+                resolveResourceIdFromAttr(context, R.attr.ic_headset));
 
-        if (capabilities.contains(VIDEO) && !(isExtVideoEnabled && linkType != LinkType.STREAM)) {
-            returnList.add(new AdapterChoiceItem(getString(R.string.video_player_key),
-                    getString(R.string.video_player),
-                    resolveResourceIdFromAttr(context, R.attr.ic_play_arrow)));
-            returnList.add(new AdapterChoiceItem(getString(R.string.popup_player_key),
-                    getString(R.string.popup_player),
-                    resolveResourceIdFromAttr(context, R.attr.ic_popup)));
-        }
+        if (linkType == LinkType.STREAM) {
+            if (isExtVideoEnabled) {
+                // show both "show info" and "video player", they are two different activities
+                returnList.add(showInfo);
+                returnList.add(videoPlayer);
+            } else {
+                final MainPlayer.PlayerType playerType = PlayerHolder.getType();
+                if (capabilities.contains(VIDEO)
+                        && PlayerHelper.isAutoplayAllowedByUser(context)
+                        && playerType == null || playerType == MainPlayer.PlayerType.VIDEO) {
+                    // show only "video player" since the details activity will be opened and the
+                    // video will be auto played there. Since "show info" would do the exact same
+                    // thing, use that as a key to let VideoDetailFragment load the stream instead
+                    // of using FetcherService (see comment in handleChoice())
+                    returnList.add(new AdapterChoiceItem(
+                            showInfo.key, videoPlayer.description, videoPlayer.icon));
+                } else {
+                    // show only "show info" if video player is not applicable, auto play is
+                    // disabled or a video is playing in a player different than the main one
+                    returnList.add(showInfo);
+                }
+            }
 
-        if (capabilities.contains(AUDIO) && !(isExtAudioEnabled && linkType != LinkType.STREAM)) {
-            returnList.add(new AdapterChoiceItem(getString(R.string.background_player_key),
-                    getString(R.string.background_player),
-                    resolveResourceIdFromAttr(context, R.attr.ic_headset)));
+            if (capabilities.contains(VIDEO)) {
+                returnList.add(popupPlayer);
+            }
+            if (capabilities.contains(AUDIO)) {
+                returnList.add(backgroundPlayer);
+            }
+
+        } else {
+            returnList.add(showInfo);
+            if (capabilities.contains(VIDEO) && !isExtVideoEnabled) {
+                returnList.add(videoPlayer);
+                returnList.add(popupPlayer);
+            }
+            if (capabilities.contains(AUDIO) && !isExtAudioEnabled) {
+                returnList.add(backgroundPlayer);
+            }
         }
 
         returnList.add(new AdapterChoiceItem(getString(R.string.download_key),
@@ -410,9 +456,9 @@ public class RouterActivity extends AppCompatActivity {
     }
 
     private void handleText() {
-        String searchString = getIntent().getStringExtra(Intent.EXTRA_TEXT);
-        int serviceId = getIntent().getIntExtra(Constants.KEY_SERVICE_ID, 0);
-        Intent intent = new Intent(getThemeWrapperContext(), MainActivity.class);
+        final String searchString = getIntent().getStringExtra(Intent.EXTRA_TEXT);
+        final int serviceId = getIntent().getIntExtra(Constants.KEY_SERVICE_ID, 0);
+        final Intent intent = new Intent(getThemeWrapperContext(), MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
         NavigationHelper.openSearch(getThemeWrapperContext(), serviceId, searchString);
@@ -452,14 +498,9 @@ public class RouterActivity extends AppCompatActivity {
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(intent -> {
-                        if (!internalRoute) {
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                        }
                         startActivity(intent);
-
                         finish();
-                    }, this::handleError)
+                    }, throwable -> handleError(throwable, currentUrl))
             );
             return;
         }
@@ -475,36 +516,33 @@ public class RouterActivity extends AppCompatActivity {
 
     @SuppressLint("CheckResult")
     private void openDownloadDialog() {
-        ExtractorHelper.getStreamInfo(currentServiceId, currentUrl, true)
+        disposables.add(ExtractorHelper.getStreamInfo(currentServiceId, currentUrl, true)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe((@NonNull StreamInfo result) -> {
-                    List<VideoStream> sortedVideoStreams = ListHelper
+                .subscribe(result -> {
+                    final List<VideoStream> sortedVideoStreams = ListHelper
                             .getSortedStreamVideosList(this, result.getVideoStreams(),
                                     result.getVideoOnlyStreams(), false);
-                    int selectedVideoStreamIndex = ListHelper
+                    final int selectedVideoStreamIndex = ListHelper
                             .getDefaultResolutionIndex(this, sortedVideoStreams);
 
-                    FragmentManager fm = getSupportFragmentManager();
-                    DownloadDialog downloadDialog = DownloadDialog.newInstance(result);
+                    final FragmentManager fm = getSupportFragmentManager();
+                    final DownloadDialog downloadDialog = DownloadDialog.newInstance(result);
                     downloadDialog.setVideoStreams(sortedVideoStreams);
                     downloadDialog.setAudioStreams(result.getAudioStreams());
                     downloadDialog.setSelectedVideoStream(selectedVideoStreamIndex);
                     downloadDialog.show(fm, "downloadDialog");
                     fm.executePendingTransactions();
-                    downloadDialog.getDialog().setOnDismissListener(dialog -> {
-                        finish();
-                    });
-                }, (@NonNull Throwable throwable) -> {
-                    onError();
-                });
+                    downloadDialog.requireDialog().setOnDismissListener(dialog -> finish());
+                }, throwable ->
+                        showUnsupportedUrlDialog(currentUrl)));
     }
 
     @Override
     public void onRequestPermissionsResult(final int requestCode,
                                            @NonNull final String[] permissions,
                                            @NonNull final int[] grantResults) {
-        for (int i : grantResults) {
+        for (final int i : grantResults) {
             if (i == PackageManager.PERMISSION_DENIED) {
                 finish();
                 return;
@@ -513,66 +551,6 @@ public class RouterActivity extends AppCompatActivity {
         if (requestCode == PermissionHelper.DOWNLOAD_DIALOG_REQUEST_CODE) {
             openDownloadDialog();
         }
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-    // Service Fetcher
-    //////////////////////////////////////////////////////////////////////////*/
-
-    private String removeHeadingGibberish(final String input) {
-        int start = 0;
-        for (int i = input.indexOf("://") - 1; i >= 0; i--) {
-            if (!input.substring(i, i + 1).matches("\\p{L}")) {
-                start = i + 1;
-                break;
-            }
-        }
-        return input.substring(start);
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-    // Utils
-    //////////////////////////////////////////////////////////////////////////*/
-
-    private String trim(final String input) {
-        if (input == null || input.length() < 1) {
-            return input;
-        } else {
-            String output = input;
-            while (output.length() > 0 && output.substring(0, 1).matches(REGEX_REMOVE_FROM_URL)) {
-                output = output.substring(1);
-            }
-            while (output.length() > 0
-                    && output.substring(output.length() - 1).matches(REGEX_REMOVE_FROM_URL)) {
-                output = output.substring(0, output.length() - 1);
-            }
-            return output;
-        }
-    }
-
-    /**
-     * Retrieves all Strings which look remotely like URLs from a text.
-     * Used if NewPipe was called through share menu.
-     *
-     * @param sharedText text to scan for URLs.
-     * @return potential URLs
-     */
-    protected String[] getUris(final String sharedText) {
-        final Collection<String> result = new HashSet<>();
-        if (sharedText != null) {
-            final String[] array = sharedText.split("\\p{Space}");
-            for (String s : array) {
-                s = trim(s);
-                if (s.length() != 0) {
-                    if (s.matches(".+://.+")) {
-                        result.add(removeHeadingGibberish(s));
-                    } else if (s.matches(".+\\..+")) {
-                        result.add("http://" + s);
-                    }
-                }
-            }
-        }
-        return result.toArray(new String[result.size()]);
     }
 
     private static class AdapterChoiceItem {
@@ -634,7 +612,7 @@ public class RouterActivity extends AppCompatActivity {
             if (!(serializable instanceof Choice)) {
                 return;
             }
-            Choice playerChoice = (Choice) serializable;
+            final Choice playerChoice = (Choice) serializable;
             handleChoice(playerChoice);
         }
 
@@ -682,46 +660,35 @@ public class RouterActivity extends AppCompatActivity {
 
                 final SharedPreferences preferences = PreferenceManager
                         .getDefaultSharedPreferences(this);
-                boolean isExtVideoEnabled = preferences.getBoolean(
+                final boolean isExtVideoEnabled = preferences.getBoolean(
                         getString(R.string.use_external_video_player_key), false);
-                boolean isExtAudioEnabled = preferences.getBoolean(
+                final boolean isExtAudioEnabled = preferences.getBoolean(
                         getString(R.string.use_external_audio_player_key), false);
 
-                PlayQueue playQueue;
-                String playerChoice = choice.playerChoice;
-
+                final PlayQueue playQueue;
                 if (info instanceof StreamInfo) {
-                    if (playerChoice.equals(backgroundPlayerKey) && isExtAudioEnabled) {
+                    if (choice.playerChoice.equals(backgroundPlayerKey) && isExtAudioEnabled) {
                         NavigationHelper.playOnExternalAudioPlayer(this, (StreamInfo) info);
-
-                    } else if (playerChoice.equals(videoPlayerKey) && isExtVideoEnabled) {
+                        return;
+                    } else if (choice.playerChoice.equals(videoPlayerKey) && isExtVideoEnabled) {
                         NavigationHelper.playOnExternalVideoPlayer(this, (StreamInfo) info);
-
-                    } else {
-                        playQueue = new SinglePlayQueue((StreamInfo) info);
-
-                        if (playerChoice.equals(videoPlayerKey)) {
-                            NavigationHelper.playOnMainPlayer(this, playQueue, true);
-                        } else if (playerChoice.equals(backgroundPlayerKey)) {
-                            NavigationHelper.enqueueOnBackgroundPlayer(this, playQueue, true);
-                        } else if (playerChoice.equals(popupPlayerKey)) {
-                            NavigationHelper.enqueueOnPopupPlayer(this, playQueue, true);
-                        }
+                        return;
                     }
+                    playQueue = new SinglePlayQueue((StreamInfo) info);
+                } else if (info instanceof ChannelInfo) {
+                    playQueue = new ChannelPlayQueue((ChannelInfo) info);
+                } else if (info instanceof PlaylistInfo) {
+                    playQueue = new PlaylistPlayQueue((PlaylistInfo) info);
+                } else {
+                    return;
                 }
 
-                if (info instanceof ChannelInfo || info instanceof PlaylistInfo) {
-                    playQueue = info instanceof ChannelInfo
-                            ? new ChannelPlayQueue((ChannelInfo) info)
-                            : new PlaylistPlayQueue((PlaylistInfo) info);
-
-                    if (playerChoice.equals(videoPlayerKey)) {
-                        NavigationHelper.playOnMainPlayer(this, playQueue, true);
-                    } else if (playerChoice.equals(backgroundPlayerKey)) {
-                        NavigationHelper.playOnBackgroundPlayer(this, playQueue, true);
-                    } else if (playerChoice.equals(popupPlayerKey)) {
-                        NavigationHelper.playOnPopupPlayer(this, playQueue, true);
-                    }
+                if (choice.playerChoice.equals(videoPlayerKey)) {
+                    NavigationHelper.playOnMainPlayer(this, playQueue, false);
+                } else if (choice.playerChoice.equals(backgroundPlayerKey)) {
+                    NavigationHelper.playOnBackgroundPlayer(this, playQueue, true);
+                } else if (choice.playerChoice.equals(popupPlayerKey)) {
+                    NavigationHelper.playOnPopupPlayer(this, playQueue, true);
                 }
             };
         }
@@ -729,7 +696,7 @@ public class RouterActivity extends AppCompatActivity {
         @Override
         public void onDestroy() {
             super.onDestroy();
-            stopForeground(true);
+            ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
             if (fetcher != null) {
                 fetcher.dispose();
             }

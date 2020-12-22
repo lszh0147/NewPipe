@@ -11,7 +11,6 @@ import androidx.core.content.ContextCompat;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.LocalItem;
 import org.schabi.newpipe.database.playlist.PlaylistStreamEntry;
-import org.schabi.newpipe.database.stream.model.StreamStateEntity;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.local.LocalItemBuilder;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
@@ -20,8 +19,7 @@ import org.schabi.newpipe.util.ImageDisplayConstants;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.views.AnimatedProgressBar;
 
-import java.text.DateFormat;
-import java.util.ArrayList;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 
 public class LocalPlaylistStreamItemHolder extends LocalItemHolder {
@@ -52,7 +50,7 @@ public class LocalPlaylistStreamItemHolder extends LocalItemHolder {
     @Override
     public void updateFromItem(final LocalItem localItem,
                                final HistoryRecordManager historyRecordManager,
-                               final DateFormat dateFormat) {
+                               final DateTimeFormatter dateTimeFormatter) {
         if (!(localItem instanceof PlaylistStreamEntry)) {
             return;
         }
@@ -70,15 +68,11 @@ public class LocalPlaylistStreamItemHolder extends LocalItemHolder {
                     R.color.duration_background_color));
             itemDurationView.setVisibility(View.VISIBLE);
 
-            StreamStateEntity state = historyRecordManager
-                    .loadLocalStreamStateBatch(new ArrayList<LocalItem>() {{
-                add(localItem);
-            }}).blockingGet().get(0);
-            if (state != null) {
+            if (item.getProgressTime() > 0) {
                 itemProgressView.setVisibility(View.VISIBLE);
                 itemProgressView.setMax((int) item.getStreamEntity().getDuration());
                 itemProgressView.setProgress((int) TimeUnit.MILLISECONDS
-                        .toSeconds(state.getProgressTime()));
+                        .toSeconds(item.getProgressTime()));
             } else {
                 itemProgressView.setVisibility(View.GONE);
             }
@@ -104,7 +98,6 @@ public class LocalPlaylistStreamItemHolder extends LocalItemHolder {
             return true;
         });
 
-        itemThumbnailView.setOnTouchListener(getOnTouchListener(item));
         itemHandleView.setOnTouchListener(getOnTouchListener(item));
     }
 
@@ -116,18 +109,14 @@ public class LocalPlaylistStreamItemHolder extends LocalItemHolder {
         }
         final PlaylistStreamEntry item = (PlaylistStreamEntry) localItem;
 
-        StreamStateEntity state = historyRecordManager
-                .loadLocalStreamStateBatch(new ArrayList<LocalItem>() {{
-            add(localItem);
-        }}).blockingGet().get(0);
-        if (state != null && item.getStreamEntity().getDuration() > 0) {
+        if (item.getProgressTime() > 0 && item.getStreamEntity().getDuration() > 0) {
             itemProgressView.setMax((int) item.getStreamEntity().getDuration());
             if (itemProgressView.getVisibility() == View.VISIBLE) {
                 itemProgressView.setProgressAnimated((int) TimeUnit.MILLISECONDS
-                        .toSeconds(state.getProgressTime()));
+                        .toSeconds(item.getProgressTime()));
             } else {
                 itemProgressView.setProgress((int) TimeUnit.MILLISECONDS
-                        .toSeconds(state.getProgressTime()));
+                        .toSeconds(item.getProgressTime()));
                 AnimationUtils.animateView(itemProgressView, true, 500);
             }
         } else if (itemProgressView.getVisibility() == View.VISIBLE) {

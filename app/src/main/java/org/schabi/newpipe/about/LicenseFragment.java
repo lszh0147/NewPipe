@@ -1,7 +1,5 @@
 package org.schabi.newpipe.about;
 
-import android.app.Activity;
-import android.content.Context;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
@@ -11,41 +9,40 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.util.ShareUtils;
 
+import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Comparator;
+
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
 /**
  * Fragment containing the software licenses.
  */
 public class LicenseFragment extends Fragment {
     private static final String ARG_COMPONENTS = "components";
+    private static final String LICENSE_KEY = "ACTIVE_LICENSE";
+
     private SoftwareComponent[] softwareComponents;
     private SoftwareComponent componentForContextMenu;
+    private License activeLicense;
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     public static LicenseFragment newInstance(final SoftwareComponent[] softwareComponents) {
         if (softwareComponents == null) {
             throw new NullPointerException("softwareComponents is null");
         }
-        LicenseFragment fragment = new LicenseFragment();
-        Bundle bundle = new Bundle();
+        final LicenseFragment fragment = new LicenseFragment();
+        final Bundle bundle = new Bundle();
         bundle.putParcelableArray(ARG_COMPONENTS, softwareComponents);
         fragment.setArguments(bundle);
         return fragment;
-    }
-
-    /**
-     * Shows a popup containing the license.
-     *
-     * @param context the context to use
-     * @param license the license to show
-     */
-    private static void showLicense(final Context context, final License license) {
-        new LicenseFragmentHelper((Activity) context).execute(license);
     }
 
     @Override
@@ -54,8 +51,20 @@ public class LicenseFragment extends Fragment {
         softwareComponents = (SoftwareComponent[]) getArguments()
                 .getParcelableArray(ARG_COMPONENTS);
 
+        if (savedInstanceState != null) {
+            final Serializable license = savedInstanceState.getSerializable(LICENSE_KEY);
+            if (license != null) {
+                activeLicense = (License) license;
+            }
+        }
         // Sort components by name
-        Arrays.sort(softwareComponents, (o1, o2) -> o1.getName().compareTo(o2.getName()));
+        Arrays.sort(softwareComponents, Comparator.comparing(SoftwareComponent::getName));
+    }
+
+    @Override
+    public void onDestroy() {
+        compositeDisposable.dispose();
+        super.onDestroy();
     }
 
     @Nullable
@@ -66,8 +75,11 @@ public class LicenseFragment extends Fragment {
         final ViewGroup softwareComponentsView = rootView.findViewById(R.id.software_components);
 
         final View licenseLink = rootView.findViewById(R.id.app_read_license);
-        licenseLink.setOnClickListener(v ->
-                showLicense(getActivity(), StandardLicenses.GPL3));
+        licenseLink.setOnClickListener(v -> {
+            activeLicense = StandardLicenses.GPL3;
+            compositeDisposable.add(LicenseFragmentHelper.showLicense(getActivity(),
+                    StandardLicenses.GPL3));
+        });
 
         for (final SoftwareComponent component : softwareComponents) {
             final View componentView = inflater
@@ -81,10 +93,17 @@ public class LicenseFragment extends Fragment {
                     component.getLicense().getAbbreviation()));
 
             componentView.setTag(component);
-            componentView.setOnClickListener(v ->
-                    showLicense(getActivity(), component.getLicense()));
+            componentView.setOnClickListener(v -> {
+                activeLicense = component.getLicense();
+                compositeDisposable.add(LicenseFragmentHelper.showLicense(getActivity(),
+                        component.getLicense()));
+            });
             softwareComponentsView.addView(componentView);
             registerForContextMenu(componentView);
+        }
+        if (activeLicense != null) {
+            compositeDisposable.add(LicenseFragmentHelper.showLicense(getActivity(),
+                    activeLicense));
         }
         return rootView;
     }
@@ -101,7 +120,7 @@ public class LicenseFragment extends Fragment {
     }
 
     @Override
-    public boolean onContextItemSelected(final MenuItem item) {
+    public boolean onContextItemSelected(@NonNull final MenuItem item) {
         // item.getMenuInfo() is null so we use the tag of the view
         final SoftwareComponent component = componentForContextMenu;
         if (component == null) {
@@ -112,8 +131,17 @@ public class LicenseFragment extends Fragment {
                 ShareUtils.openUrlInBrowser(getActivity(), component.getLink());
                 return true;
             case R.id.action_show_license:
-                showLicense(getActivity(), component.getLicense());
+                compositeDisposable.add(LicenseFragmentHelper.showLicense(getActivity(),
+                        component.getLicense()));
         }
         return false;
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull final Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        if (activeLicense != null) {
+            savedInstanceState.putSerializable(LICENSE_KEY, activeLicense);
+        }
     }
 }

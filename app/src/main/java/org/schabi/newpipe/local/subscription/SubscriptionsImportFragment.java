@@ -27,6 +27,7 @@ import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.subscription.SubscriptionExtractor;
 import org.schabi.newpipe.local.subscription.services.SubscriptionsImportService;
 import org.schabi.newpipe.report.ErrorActivity;
+import org.schabi.newpipe.report.ErrorInfo;
 import org.schabi.newpipe.report.UserAction;
 import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.FilePickerActivityHelper;
@@ -64,7 +65,7 @@ public class SubscriptionsImportFragment extends BaseFragment {
     private Button inputButton;
 
     public static SubscriptionsImportFragment getInstance(final int serviceId) {
-        SubscriptionsImportFragment instance = new SubscriptionsImportFragment();
+        final SubscriptionsImportFragment instance = new SubscriptionsImportFragment();
         instance.setInitialData(serviceId);
         return instance;
     }
@@ -84,7 +85,7 @@ public class SubscriptionsImportFragment extends BaseFragment {
         setupServiceVariables();
         if (supportedSources.isEmpty() && currentServiceId != Constants.NO_SERVICE_ID) {
             ErrorActivity.reportError(activity, Collections.emptyList(), null, null,
-                    ErrorActivity.ErrorInfo.make(UserAction.SOMETHING_ELSE,
+                    ErrorInfo.make(UserAction.SOMETHING_ELSE,
                             NewPipe.getNameOfService(currentServiceId),
                             "Service don't support importing", R.string.general_error));
             activity.finish();
@@ -140,7 +141,7 @@ public class SubscriptionsImportFragment extends BaseFragment {
             setInfoText("");
         }
 
-        ActionBar supportActionBar = activity.getSupportActionBar();
+        final ActionBar supportActionBar = activity.getSupportActionBar();
         if (supportActionBar != null) {
             supportActionBar.setDisplayShowTitleEnabled(true);
             setTitle(getString(R.string.import_title));
@@ -206,7 +207,7 @@ public class SubscriptionsImportFragment extends BaseFragment {
                 relatedUrl = extractor.getRelatedUrl();
                 instructionsString = ServiceHelper.getImportInstructions(currentServiceId);
                 return;
-            } catch (ExtractionException ignored) {
+            } catch (final ExtractionException ignored) {
             }
         }
 
