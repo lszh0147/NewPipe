@@ -128,9 +128,9 @@ public class ErrorActivity extends AppCompatActivity {
     }
 
     // async call
-    public static void reportError(final Handler handler, final Context context,
-                                   final Throwable e, final Class returnActivity,
-                                   final View rootView, final ErrorInfo errorInfo) {
+//    public static void reportError(final Handler handler, final Context context,
+//                                   final Throwable e, final Class returnActivity,
+//                                   final View rootView, final ErrorInfo errorInfo) {
 
 //        List<Throwable> el = null;
 //        if (e != null) {
@@ -138,7 +138,7 @@ public class ErrorActivity extends AppCompatActivity {
 //            el.add(e);
 //        }
 //        reportError(handler, context, el, returnActivity, rootView, errorInfo);
-    }
+//    }
 
     // async call
 //    public static void reportError(final Handler handler, final Context context,
@@ -147,8 +147,8 @@ public class ErrorActivity extends AppCompatActivity {
 //        handler.post(() -> reportError(context, el, returnActivity, rootView, errorInfo));
 //    }
 
-    public static void reportError(final Context context, final CrashReportData report,
-                                   final ErrorInfo errorInfo) {
+//    public static void reportError(final Context context, final CrashReportData report,
+//                                   final ErrorInfo errorInfo) {
 //        final String[] el = {report.getString(ReportField.STACK_TRACE)};
 //
 //        final Intent intent = new Intent(context, ErrorActivity.class);
@@ -156,7 +156,7 @@ public class ErrorActivity extends AppCompatActivity {
 //        intent.putExtra(ERROR_LIST, el);
 //        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 //        context.startActivity(intent);
-    }
+//    }
 
     private static String getStackTrace(final Throwable throwable) {
         final StringWriter sw = new StringWriter();
